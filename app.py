@@ -1,3 +1,5 @@
+import json
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -107,11 +109,34 @@ def get_base64_of_bin_file(bin_file):
         data = f.read()
     return base64.b64encode(data).decode()
 
+# @st.cache_data(ttl=3600)
+# def load_and_prep_data():
+#     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+#     creds = Credentials.from_service_account_file("key.json", scopes=scope)
+#     client = gspread.authorize(creds)
+#     sheet = client.open("Scrap_data").worksheet("MASTER")
+#     df = pd.DataFrame(sheet.get_all_records())
+#     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+#     df = df.dropna(subset=["Value", "Date"])
+#     df["Metric"] = df["Metric"].astype(str).str.strip()
+#     df["Value"] = pd.to_numeric(df["Value"], errors="coerce")
+#     wide_df = df.pivot_table(index="Date", columns="Metric", values="Value", aggfunc='last')
+#     wide_df = wide_df.sort_index().ffill()
+#     return wide_df
+
 @st.cache_data(ttl=3600)
 def load_and_prep_data():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    creds = Credentials.from_service_account_file("key.json", scopes=scope)
+    
+    # NEW: Pull the secure credentials from Streamlit Secrets
+    google_creds_str = st.secrets["GOOGLE_CREDENTIALS_JSON"]
+    creds_dict = json.loads(google_creds_str)
+    
+    # NEW: Use from_service_account_info instead of from_service_account_file
+    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     client = gspread.authorize(creds)
+    
+    # The rest stays exactly the same
     sheet = client.open("Scrap_data").worksheet("MASTER")
     df = pd.DataFrame(sheet.get_all_records())
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
@@ -121,6 +146,7 @@ def load_and_prep_data():
     wide_df = df.pivot_table(index="Date", columns="Metric", values="Value", aggfunc='last')
     wide_df = wide_df.sort_index().ffill()
     return wide_df
+
 
 try:
     data = load_and_prep_data()
