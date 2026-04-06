@@ -138,7 +138,7 @@ def load_and_prep_data():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     
     # NEW: Pull the secure credentials from Streamlit Secrets
-    google_creds_str = st.secrets["GOOGLE_CREDENTIALS_JSON"]
+    google_creds_str = st.secrets["google_credentials_json"]
     creds_dict = json.loads(google_creds_str)
     
     # NEW: Use from_service_account_info instead of from_service_account_file
