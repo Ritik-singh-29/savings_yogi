@@ -17,6 +17,15 @@ st.set_page_config(
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
+# --- HIDE STREAMLIT BRANDING ---
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_st_style, unsafe_allow_html=True)
 
 # Professional Banking/Corporate CSS Theme
 st.markdown("""
