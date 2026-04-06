@@ -1,5 +1,5 @@
 import json
-
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -137,16 +137,28 @@ def get_base64_of_bin_file(bin_file):
 def load_and_prep_data():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     
-    # NEW: Pull the secure credentials from Streamlit Secrets
-    google_creds_str = st.secrets["google_credentials_json"]
-    creds_dict = json.loads(google_creds_str)
+    # 1. Look for the key in Google Cloud's environment variables
+    google_creds_json = os.environ.get("GOOGLE_CREDENTIALS_JSON")
     
-    # NEW: Use from_service_account_info instead of from_service_account_file
+    # 2. Fallback: If you are running locally and have a key.json file
+    if not google_creds_json:
+        try:
+            with open("key.json", "r") as f:
+                google_creds_json = f.read()
+        except FileNotFoundError:
+            st.error("Credential source not found! Check GCP Environment Variables or local key.json.")
+            st.stop()
+
+    # Turn the text into a dictionary
+    creds_dict = json.loads(google_creds_json)
+    
+    # Authorize
     creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     client = gspread.authorize(creds)
     
-    # The rest stays exactly the same
+    # The rest of your code (sheet = client.open...)
     sheet = client.open("Scrap_data").worksheet("MASTER")
+    # ... keep the rest of your logic here
     df = pd.DataFrame(sheet.get_all_records())
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
     df = df.dropna(subset=["Value", "Date"])
